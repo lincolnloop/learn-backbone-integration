@@ -1,95 +1,33 @@
-from functools import wraps
-import json
+from rest_framework import generics, permissions
 
-from django.core import serializers
-from django.http import HttpResponse, HttpResponseBadRequest, Http404
-from django.shortcuts import get_object_or_404
-from django.views.generic import View
-
-from todos.todo.forms import TodoForm
 from todos.todo.models import Todo
+from todos.todo.serializers import TodoSerializer
 
 
-class HttpResponseUnauthorized(HttpResponse):
-    status_code = 401
+class TodoList(generics.ListCreateAPIView):
+    model = Todo
+    serializer_class = TodoSerializer
+
+    def get_queryset(self):
+        return Todo.objects.filter(owner=self.request.user)
+
+    def pre_save(self, obj):
+        """Automatically provide the owner"""
+        obj.owner = self.request.user
 
 
-def login_required(view_method):
-    @wraps(view_method)
-    def _wrapped_view_method(view, request, *args, **kwargs):
-        if request.user.is_authenticated():
-            return view_method(view, request, *args, **kwargs)
-        else:
-            return HttpResponseUnauthorized()
-    return _wrapped_view_method
+class IsOwner(permissions.BasePermission):
+    """
+    Check to make sure the current user is the owner.
+    """
+
+    def has_permission(self, request, view, obj=None):
+        if obj:
+            return request.user == getattr(obj, 'owner', None)
+        return True
 
 
-class TodoView(View):
-    http_method_names = ['get', 'post', 'put', 'delete']
-
-    def render(self, data=None, error=False):
-        if error:
-            response = HttpResponseBadRequest
-        else:
-            response = HttpResponse
-        return response(content=json.dumps(data),
-                        content_type='application/json')
-
-    def serialize(self, queryset):
-        """
-        Use Django's built-in serializer to convert to json, and adjust the
-        fields as necessary.
-        """
-        condensed = []
-        for obj in serializers.serialize('python', queryset):
-            fields = obj['fields']
-
-            # Remove the owner, which is automatically handled by the app
-            del fields['owner']
-
-            # Add the id
-            fields['id'] = obj['pk']
-
-            condensed.append(fields)
-        return condensed
-
-    @login_required
-    def get(self, request, pk=None):
-        request.META["CSRF_COOKIE_USED"] = True  # Enable the CSRF cookie
-        if pk:
-            todos = Todo.objects.filter(pk=pk, owner=request.user)
-            if not todos:
-                raise Http404
-        else:
-            todos = Todo.objects.filter(owner=request.user)
-
-        return self.render(self.serialize(todos))
-
-    @login_required
-    def post(self, request, pk=None):
-        data = json.loads(request.body)
-        data['owner'] = request.user.pk
-        form = TodoForm(data=data)
-        if form.is_valid():
-            form.save()
-            return self.render({'id': form.instance.pk})
-        else:
-            return self.render(form.errors, error=True)
-
-    @login_required
-    def put(self, request, pk):
-        todo = get_object_or_404(Todo, pk=pk, owner=request.user)
-        data = json.loads(request.body)
-        data['owner'] = request.user.pk
-        form = TodoForm(data=data, instance=todo)
-        if form.is_valid():
-            form.save()
-            return self.render()
-        else:
-            return self.render(form.errors, error=True)
-
-    @login_required
-    def delete(self, request, pk):
-        todo = get_object_or_404(Todo, pk=pk, owner=request.user)
-        todo.delete()
-        return self.render()
+class TodoDetail(generics.RetrieveUpdateDestroyAPIView):
+    model = Todo
+    serializer_class = TodoSerializer
+    permission_classes = (permissions.IsAuthenticated, IsOwner)
