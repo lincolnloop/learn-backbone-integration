@@ -1,7 +1,17 @@
 from rest_framework import generics, permissions
 
-from todos.todo.models import Todo
-from todos.todo.serializers import TodoSerializer
+from todos.todo.models import Category, Todo
+from todos.todo.serializers import CategorySerializer, TodoSerializer
+
+
+class CategoryList(generics.ListAPIView):
+    model = Category
+    serializer_class = CategorySerializer
+
+
+class CategoryDetail(generics.RetrieveAPIView):
+    model = Category
+    serializer_class = CategorySerializer
 
 
 class TodoList(generics.ListCreateAPIView):
