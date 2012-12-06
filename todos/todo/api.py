@@ -1,13 +1,24 @@
-from tastypie import http
+from tastypie import fields, http
 from tastypie.authentication import SessionAuthentication
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource
 from tastypie.utils import dict_strip_unicode_keys
 
-from todos.todo.models import Todo
+from todos.todo.models import Category, Todo
+
+
+class CategoryResource(ModelResource):
+
+    class Meta:
+        queryset = Category.objects.all()
+        resource_name = 'categories'
+        authentication = SessionAuthentication()
+        list_allowed_methods = ['get']
+        detail_allowed_methods = ['get']
 
 
 class TodoResource(ModelResource):
+    category = fields.ToOneField(CategoryResource, 'category')
 
     class Meta:
         queryset = Todo.objects.all()
