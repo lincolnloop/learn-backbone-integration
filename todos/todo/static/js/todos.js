@@ -29,6 +29,14 @@ $(function(){
     // Toggle the `done` state of this todo item.
     toggle: function() {
       this.save({done: !this.get("done")});
+    },
+
+    get_category: function() {
+      var url = this.get('category'),
+          category = new Backbone.Model();
+      category.url = url;
+      category.fetch();
+      return category;
     }
 
   });
@@ -234,5 +242,9 @@ $(function(){
 
   // Finally, we kick things off by creating the **App**.
   var App = new AppView;
+
+  // Attach the global Todos list to the window object so that relationships
+  // can be demonstrated.
+  window.Todos = Todos;
 
 });
