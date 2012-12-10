@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
-from django.views.generic.simple import direct_to_template
+from django.views.generic import TemplateView
 
 from todos.todo.views import CategoryList, CategoryDetail, TodoList, TodoDetail
 
@@ -20,5 +20,5 @@ urlpatterns = patterns('',
     url(r'^api-auth/', include('rest_framework.urls',
         namespace='rest_framework')),
 
-    url(r'^$', direct_to_template, {'template': 'index.html'}),
+    url(r'^$', TemplateView.as_view(template_name="index.html")),
 )
