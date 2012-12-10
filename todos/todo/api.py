@@ -18,7 +18,8 @@ class CategoryResource(ModelResource):
 
 
 class TodoResource(ModelResource):
-    category = fields.ToOneField(CategoryResource, 'category')
+    category = fields.ForeignKey(CategoryResource, 'category', null=True,
+                                 blank=True)
 
     class Meta:
         queryset = Todo.objects.all()
