@@ -31,12 +31,11 @@ $(function(){
       this.save({done: !this.get("done")});
     },
 
-    get_category: function() {
+    get_category: function(callback) {
       var url = this.get('category'),
           category = new Backbone.Model();
       category.url = url;
-      category.fetch();
-      return category;
+      category.fetch({success: callback});
     }
 
   });
