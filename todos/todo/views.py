@@ -41,3 +41,7 @@ class TodoDetail(generics.RetrieveUpdateDestroyAPIView):
     model = Todo
     serializer_class = TodoSerializer
     permission_classes = (permissions.IsAuthenticated, IsOwner)
+
+    def pre_save(self, obj):
+        """Automatically provide the owner"""
+        obj.owner = self.request.user
